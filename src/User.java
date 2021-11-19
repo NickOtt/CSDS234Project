@@ -5,31 +5,31 @@ import java.util.ArrayList;
  */
 public class User
 {
-    private ArrayList<String> places;
-    private ArrayList<Integer> ratings;
-    public static String id;
+    private ArrayList<Review> reviews;
+    private String id;
     
-    public User(String id)
+    public User(String id, ArrayList<Review> reviews)
     {
         this.id = id;
-        places = new ArrayList<String>();
-        ratings = new ArrayList<Integer>();
+        this.reviews = reviews;
     }
     
-    public void addReview(String place, Integer rating)
+    public void addReview(Review rating)
     {
-        places.add(place);
-        ratings.add(rating);
+        reviews.add(rating);
     }
     
-    public String getPlace(int i)
+    public Review getReview(int i)
     {
-        return places.get(i);
+        return reviews.get(i);
     }
     
-    public Integer getRating(int i)
-    {
-        return ratings.get(i);
+    public ArrayList<Review> getAllReviews() {
+    	return reviews;
+    }
+    
+    public String getId() {
+    	return id;
     }
     
 }
