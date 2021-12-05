@@ -109,7 +109,7 @@ public class App
     	for(Review revX : xUserReviews) {
     		for(Review revY : yUserReviews) {
     			if (revX.getBusinessId().equals(revY.getBusinessId())) {
-    				similNumerator += revX.getStars()*revY.getStars();
+    				similNumerator += revX.getStars()*revY.getStars(); // This is a comment
     			}
     		}
     	}
