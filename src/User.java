@@ -6,14 +6,15 @@ import java.util.ArrayList;
 public class User
 {
     private ArrayList<Review> reviews;
+    public ArrayList<Review> commonReviews;
+    public ArrayList<Review> possibleRecs;
     private String id;
-    private double avgStars;
     
-    public User(String id, double avgStars, ArrayList<Review> reviews)
+    
+    public User(String id, ArrayList<Review> reviews)
     {
         this.id = id;
         this.reviews = reviews;
-        this.avgStars = avgStars;
     }
     
     public void addReview(Review rating)
@@ -33,13 +34,5 @@ public class User
     public String getId() {
     	return id;
     }
-
-	public double getAvgStars() {
-		return avgStars;
-	}
-
-	public void setAvgStars(double avgStars) {
-		this.avgStars = avgStars;
-	}
     
 }
