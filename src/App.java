@@ -80,6 +80,8 @@ public class App
 //		double absPearsonCorrSum = 0;
 //		double weightedPearsonCorrSum = 0;
 //		int predictionBusiness = 0;
+//		
+//		//TODO: instead of using userList, we want to pick the top 10 users according to the correlation value
 //		for (int user = 2; user < userList.size(); user++) {
 //			absPearsonCorrSum += Math.abs(pearsonCorrelation(userList.get(0),userList.get(user)));
 //			//TODO: Figure out how to set business to predict for
