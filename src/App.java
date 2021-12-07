@@ -6,7 +6,7 @@ import java.util.Set;
 
 import java.lang.Math;
 
-/*import org.json.Document;
+import org.bson.Document;
 import org.json.JSONObject;
 
 import com.mongodb.MongoClient;
@@ -14,13 +14,13 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
-*/
+
 public class App 
 {
     public static void main(String[] args )
     {
     	//Test stuff
-    	/*MongoClient mongoClient = new MongoClient( "localhost" , 27017 );
+    	MongoClient mongoClient = new MongoClient( "localhost" , 27017 );
 
 		MongoDatabase database = mongoClient.getDatabase( "data" );
 		
@@ -42,63 +42,57 @@ public class App
 		//JSONObject firstDoc = new JSONObject(userTable.find().first().toJson());
 		//System.out.println(firstDoc.get("name").toString());
 		
+		//System.out.println(userTable.find().first().toJson());
+		
+		//JSONObject firstDoc = new JSONObject(userTable.find().first().toJson());
+		//System.out.println(firstDoc.get("name").toString());
+		
+		//Find all user id and the first review for them (slow currently)
+		List<Document> userIdList = userTable.find().projection(Projections.fields(Projections.include("user_id"))).into(new ArrayList<Document>());
+		for (int i = 0; i < 20; i++) {
+	            Document userId = userIdList.get(i);
+	            List<Document> userReviewList = reviewTable.find(Filters.eq("user_id",userId.get("user_id").toString())).projection(Projections.fields(Projections.include("review_id","user_id","business_id","stars"))).into(new ArrayList<Document>());
+	            System.out.println(userId.get("user_id"));
+	            if(userReviewList.size() > 0) {
+					Document userReview = userReviewList.get(0);
+				    System.out.println(userReview.get("stars"));
+	            }
+        }
+		
 		ArrayList<User> userList = new ArrayList<User>();
-	MongoDatabase database = mongoClient.getDatabase( "data" );
-	
-	MongoCollection<Document> userTable = database.getCollection("user");
-	MongoCollection<Document> reviewTable = database.getCollection("review");
-	
-	//System.out.println(userTable.find().first().toJson());
-	
-	//JSONObject firstDoc = new JSONObject(userTable.find().first().toJson());
-	//System.out.println(firstDoc.get("name").toString());
-	
-	//Find all user id and the first review for them (slow currently)
-	List<Document> userIdList = userTable.find().projection(Projections.fields(Projections.include("user_id"))).into(new ArrayList<Document>());
-	for (int i = 0; i < 20; i++) {
-            Document userId = userIdList.get(i);
-            List<Document> userReviewList = reviewTable.find(Filters.eq("user_id",userId.get("user_id").toString())).projection(Projections.fields(Projections.include("review_id","user_id","business_id","stars"))).into(new ArrayList<Document>());
-            System.out.println(userId.get("user_id"));
-            if(userReviewList.size() > 0) {
-		Document userReview = userReviewList.get(0);
-	        System.out.println(userReview.get("stars"));
-            }
-        }*/
+	            //for() {
+			//User newUser = new User(userId);
+		//}
 		
-	ArrayList<User> userList = new ArrayList<User>();
-            //for() {
-		//User newUser = new User(userId);
-	//}
-	
-	//for(User user: userList) {
+		//for(User user: userList) {
+			
+		//}
 		
-	//}
-	
-	for (User x: userList){
-	    if (!(x.equals(args))){
-	        //Sort into common reviews and possible businesses for recommendation (review in y but not in x)
-        	for (Review r1: x.getAllReviews()){
-        	    String biz1 = r1.getBusinessId();
-	            /*for (Review r2: args.getAllReviews()){ //modify when we figure out I/O
-	              String biz2 = r2.getBusinessId();
-	              if (biz1.equals(biz2)){
-	                  x.commonReviews.add(r1);
-                      }
-                      else{
-                          x.possibleRecs.add(r1);
-                      }
-                    }*/
-                }
+		for (User x: userList){
+		    if (!(x.equals(args))){
+		        //Sort into common reviews and possible businesses for recommendation (review in y but not in x)
+	        	for (Review r1: x.getAllReviews()){
+	        	    String biz1 = r1.getBusinessId();
+		            /*for (Review r2: args.getAllReviews()){ //modify when we figure out I/O
+		              String biz2 = r2.getBusinessId();
+		              if (biz1.equals(biz2)){
+		                  x.commonReviews.add(r1);
+	                      }
+	                      else{
+	                          x.possibleRecs.add(r1);
+	                      }
+	                    }*/
+	            }
                 for (Review rev: x.possibleRecs){
                     double expRatP = expRatP(x, userList, rev);
                     double expRatC = expRatC(x, userList, rev);
                 }
             }
         }
-        
-	//To close connection
-	//mongoClient.close();
-    }
+	        
+		//To close connection
+		//mongoClient.close();
+	    }
     
     public static double pearsonCorrelation(User x, User y) {
     	List<Review> xUserReviews = x.getAllReviews();
