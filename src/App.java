@@ -25,6 +25,16 @@ public class App
 		MongoCollection<Document> userTable = database.getCollection("user");
 		MongoCollection<Document> reviewTable = database.getCollection("review");
 		
+		String queriedUserId = "gSNq08XIdh_vvdm7USKunA"; //Should be set with parameter passed in
+		List<Document> queriedUserReviewList = reviewTable.find(Filters.eq("user_id",queriedUserId)).projection(Projections.fields(Projections.include("review_id","user_id","business_id","stars"))).into(new ArrayList<Document>());
+		for (int rev = 0; rev < queriedUserReviewList.size(); rev++) {
+			//This should be used as the list of users to compare to. Need to get the average stars for these though
+			List<Document> relatedUserId =  reviewTable.find(Filters.eq("business_id",queriedUserReviewList.get(rev).get("business_id"))).projection(Projections.fields(Projections.include("user_id"))).into(new ArrayList<Document>());
+			
+			System.out.println(relatedUserId.get(0).get("user_id")); //Checking if actually grabbing user ids
+		}
+		
+		
 		//System.out.println(userTable.find().first().toJson());
 		
 		//JSONObject firstDoc = new JSONObject(userTable.find().first().toJson());
