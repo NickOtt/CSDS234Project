@@ -28,38 +28,68 @@ public class App
 		MongoCollection<Document> reviewTable = database.getCollection("review");
 		
 		String queriedUserId = "gSNq08XIdh_vvdm7USKunA"; //Should be set with parameter passed in
+		
+		//Put together queried user object
+		List<Document> qUserInfo = userTable.find(Filters.eq("user_id",queriedUserId)).projection(Projections.fields(Projections.include("user_id","average_stars"))).into(new ArrayList<Document>());
+		List<Document> qUserReviewsList = reviewTable.find(Filters.eq("user_id",queriedUserId)).projection(Projections.fields(Projections.include("review_id","user_id","business_id","stars"))).into(new ArrayList<Document>());
+		ArrayList<Review> qUserReviews = new ArrayList<Review>();
+		double qUserAvgStars = 0;
+        try {
+        	qUserAvgStars = (double) qUserInfo.get(0).get("average_stars");
+        } catch (Exception e) {
+        	e.printStackTrace();
+        	qUserAvgStars = (int) qUserInfo.get(0).get("average_stars");
+        }
+        for (int userReview = 0; userReview < qUserReviewsList.size(); userReview++) {
+			Document newUserReview = qUserReviewsList.get(userReview);
+        	Review newReview = new Review(newUserReview.get("review_id").toString(),newUserReview.get("business_id").toString(), (int) newUserReview.get("stars"));
+        	qUserReviews.add(newReview);
+        }
+		
+		User queriedUser = new User(qUserInfo.get(0).getString("user_id"),qUserAvgStars,qUserReviews);
+		
+		ArrayList<User> relatedUserList = new ArrayList<User>();
 		List<Document> queriedUserReviewList = reviewTable.find(Filters.eq("user_id",queriedUserId)).projection(Projections.fields(Projections.include("review_id","user_id","business_id","stars"))).into(new ArrayList<Document>());
 		for (int rev = 0; rev < queriedUserReviewList.size(); rev++) {
 			//This should be used as the list of users to compare to. Need to get the average stars for these though
 			List<Document> relatedUserId =  reviewTable.find(Filters.eq("business_id",queriedUserReviewList.get(rev).get("business_id"))).projection(Projections.fields(Projections.include("user_id"))).into(new ArrayList<Document>());
-			
-			System.out.println(relatedUserId.get(0).get("user_id")); //Checking if actually grabbing user ids
+			for(int relatedUser = 0; relatedUser < relatedUserId.size(); relatedUser++) {
+				List<Document> userExists = userTable.find(Filters.eq("user_id",relatedUserId.get(relatedUser).get("user_id"))).projection(Projections.fields(Projections.include("user_id","average_stars"))).into(new ArrayList<Document>());
+				if(userExists.size() > 0) {
+		            double userAvgStars = 0;
+		            try {
+		            	userAvgStars = (double) userExists.get(0).get("average_stars");
+		            } catch (Exception e) {
+		            	e.printStackTrace();
+		            	userAvgStars = (int) userExists.get(0).get("average_stars");
+		            }
+					relatedUserList.add(new User(relatedUserId.get(relatedUser).get("user_id").toString(), userAvgStars, null));
+				}
+			}
+			System.out.println("Done with review " + rev);
 		}
 		
 		
-		//System.out.println(userTable.find().first().toJson());
+		ArrayList<User> userList = new ArrayList<User>();
 		
-		//JSONObject firstDoc = new JSONObject(userTable.find().first().toJson());
-		//System.out.println(firstDoc.get("name").toString());
-		
-		//System.out.println(userTable.find().first().toJson());
-		
-		//JSONObject firstDoc = new JSONObject(userTable.find().first().toJson());
-		//System.out.println(firstDoc.get("name").toString());
-		
-		//Find all user id and the first review for them (slow currently)
-		List<Document> userIdList = userTable.find().projection(Projections.fields(Projections.include("user_id"))).into(new ArrayList<Document>());
-		for (int i = 0; i < 20; i++) {
-	            Document userId = userIdList.get(i);
-	            List<Document> userReviewList = reviewTable.find(Filters.eq("user_id",userId.get("user_id").toString())).projection(Projections.fields(Projections.include("review_id","user_id","business_id","stars"))).into(new ArrayList<Document>());
-	            System.out.println(userId.get("user_id"));
-	            if(userReviewList.size() > 0) {
-					Document userReview = userReviewList.get(0);
-				    System.out.println(userReview.get("stars"));
-	            }
+		for (int user = 0; user < 20; user++) {
+			User relatedUser = relatedUserList.get(user);
+			
+			List<Document> userReviewList = reviewTable.find(Filters.eq("user_id",relatedUser.getId())).projection(Projections.fields(Projections.include("review_id","user_id","business_id","stars"))).into(new ArrayList<Document>());
+            
+            ArrayList<Review> userReviews = new ArrayList<Review>();
+            for (int userReview = 0; userReview < userReviewList.size(); userReview++) {
+				Document newUserReview = userReviewList.get(userReview);
+            	Review newReview = new Review(newUserReview.get("review_id").toString(),newUserReview.get("business_id").toString(), (int) newUserReview.get("stars"));
+            	userReviews.add(newReview);
+            }
+            
+            relatedUserList.get(user).setAllReviews(userReviews);
+            userList.add(relatedUserList.get(user));
+            System.out.println("Updated user " + user);
         }
 		
-		ArrayList<User> userList = new ArrayList<User>();
+		//ArrayList<User> userList = new ArrayList<User>();
 	            //for() {
 			//User newUser = new User(userId);
 		//}
@@ -73,15 +103,15 @@ public class App
 		        //Sort into common reviews and possible businesses for recommendation (review in y but not in x)
 	        	for (Review r1: x.getAllReviews()){
 	        	    String biz1 = r1.getBusinessId();
-		            /*for (Review r2: args.getAllReviews()){ //modify when we figure out I/O
+		            for (Review r2: queriedUser.getAllReviews()){ //modify when we figure out I/O
 		              String biz2 = r2.getBusinessId();
 		              if (biz1.equals(biz2)){
 		                  x.commonReviews.add(r1);
-	                      }
-	                      else{
-	                          x.possibleRecs.add(r1);
-	                      }
-	                    }*/
+                      }
+                      else{
+                          x.possibleRecs.add(r1);
+                      }
+                    }
 	            }
                 for (Review rev: x.possibleRecs){
                     double expRatP = expRatP(x, userList, rev);

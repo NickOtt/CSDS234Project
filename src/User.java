@@ -9,17 +9,24 @@ public class User
     public ArrayList<Review> commonReviews;
     public ArrayList<Review> possibleRecs;
     private String id;
+    private double avgStars;
     
     
-    public User(String id, ArrayList<Review> reviews)
+    public User(String id, double avgStars, ArrayList<Review> reviews)
     {
         this.id = id;
         this.reviews = reviews;
+        this.avgStars = avgStars;
     }
     
     public void addReview(Review rating)
     {
         reviews.add(rating);
+    }
+    
+    public void setAllReviews(ArrayList<Review> reviews)
+    {
+    	this.reviews = reviews;
     }
     
     public Review getReview(int i)
@@ -35,4 +42,11 @@ public class User
     	return id;
     }
     
+    public double getAvgStars() {
+		return avgStars;
+	}
+
+	public void setAvgStars(double avgStars) {
+		this.avgStars = avgStars;
+	}
 }
