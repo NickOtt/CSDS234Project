@@ -17,6 +17,8 @@ public class User
         this.id = id;
         this.reviews = reviews;
         this.avgStars = avgStars;
+        this.commonReviews = new ArrayList<Review>();
+        this.possibleRecs = new ArrayList<Review>();
     }
     
     public void addReview(Review rating)
