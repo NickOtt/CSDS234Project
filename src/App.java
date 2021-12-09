@@ -43,6 +43,13 @@ public class App {
 		List<Document> qUserInfo = userTable.find(Filters.eq("user_id", queriedUserId))
 				.projection(Projections.fields(Projections.include("user_id", "average_stars")))
 				.into(new ArrayList<Document>());
+		
+		if(qUserInfo.size() == 0) {
+			System.out.println("User " + queriedUserId + " does not exist. Try another user ID.");
+			mongoClient.close();
+			return;
+		}
+		
 		List<Document> qUserReviewsList = reviewTable.find(Filters.eq("user_id", queriedUserId))
 				.projection(Projections.fields(Projections.include("review_id", "user_id", "business_id", "stars")))
 				.into(new ArrayList<Document>());
