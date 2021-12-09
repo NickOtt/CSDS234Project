@@ -24,7 +24,7 @@ public class App {
 		MongoCollection<Document> userTable = database.getCollection("user");
 		MongoCollection<Document> reviewTable = database.getCollection("review");
 
-		String queriedUserId = "gSNq08XIdh_vvdm7USKunA"; // Should be set with parameter passed in
+		String queriedUserId ="gSNq08XIdh_vvdm7USKunA"; //"yWd8xZQY5F6QXhVNQ5TxtA";//"jHEl6lbZ_ToShziNmO-16w"; //"gSNq08XIdh_vvdm7USKunA"; // Should be set with parameter passed in
 
 		// Put together queried user object
 		List<Document> qUserInfo = userTable.find(Filters.eq("user_id", queriedUserId))
@@ -98,7 +98,9 @@ public class App {
 			}
 
 			relatedUserList.get(user).setAllReviews(userReviews);
-			userList.add(relatedUserList.get(user));
+			if(!relatedUserList.get(user).getId().equals(queriedUser.getId())) {
+				userList.add(relatedUserList.get(user));
+			}
 			System.out.println("Updated user " + user);
 		}
 		
@@ -161,8 +163,8 @@ public class App {
 		List<Review> yUserReviews = y.getAllReviews();
 
 		// Calculate average ratings for users x and y across all ratings
-		double avgRatingUserX = x.getAvgStars();
-		double avgRatingUserY = y.getAvgStars();
+		double avgRatingUserX = avgRating(x);
+		double avgRatingUserY = avgRating(y); 
 
 		double similNumerator = 0;
 		double similDenomX = 0;
@@ -173,7 +175,7 @@ public class App {
 			for (Review revY : yUserReviews) {
 				if (revX.getBusinessId().equals(revY.getBusinessId())) { // Can change this to utilize commonReviews
 																			// list
-					similNumerator += (revX.getStars() - avgRatingUserX) * (revY.getStars() - avgRatingUserY);
+					similNumerator += Math.abs((revX.getStars() - avgRatingUserX) * (revY.getStars() - avgRatingUserY));
 					similDenomX += Math.pow((revX.getStars() - avgRatingUserX), 2);
 					similDenomY += Math.pow((revY.getStars() - avgRatingUserY), 2);
 				}
@@ -218,6 +220,18 @@ public class App {
 		// Return the Pearson correlation similarity of users x and y
 		return similNumerator / (Math.sqrt(similDenomX) * Math.sqrt(similDenomY));
 	}
+	
+    private static double avgRating(User user) {
+    	List<Review> userReviews = user.getAllReviews();
+    	double avgRating = 0;
+    	int numRatings = userReviews.size();
+
+    	for(Review rev : userReviews) {
+    		avgRating += rev.getStars();
+    	}
+    	
+    	return avgRating/numRatings;
+    }
 
 	private static double cosineK(User x, List<User> userList) {
 		double k;
