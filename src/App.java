@@ -185,59 +185,58 @@ public class App {
 		double avgRatingUserX = avgRating(x);
 		double avgRatingUserY = avgRating(y);
 
-		double similNumerator = 0;
-		double similDenomX = 0;
-		double similDenomY = 0;
+		double covariance = 0;
+		double varianceX = 0;
+		double varianceY = 0;
 
 		// Find reviews for the same business
 		for (Review revX : xUserReviews) {
 			for (Review revY : yUserReviews) {
-				if (revX.getBusinessId().equals(revY.getBusinessId())) { // Can change this to utilize commonReviews
-																			// list
-					similNumerator += Math.abs((revX.getStars() - avgRatingUserX) * (revY.getStars() - avgRatingUserY));
-					similDenomX += Math.pow((revX.getStars() - avgRatingUserX), 2);
-					similDenomY += Math.pow((revY.getStars() - avgRatingUserY), 2);
+				if (revX.getBusinessId().equals(revY.getBusinessId())) { 
+					covariance += Math.abs((revX.getStars() - avgRatingUserX) * (revY.getStars() - avgRatingUserY));
+					varianceX += Math.pow((revX.getStars() - avgRatingUserX), 2);
+					varianceY += Math.pow((revY.getStars() - avgRatingUserY), 2);
 				}
 			}
 		}
 
-		if (similDenomX == 0 || similDenomY == 0) {
+		if (varianceX == 0 || varianceY == 0) {
 			return 0;
 		}
 
 		// Return the Pearson correlation similarity of users x and y
-		return similNumerator / (Math.sqrt(similDenomX) * Math.sqrt(similDenomY));
+		return covariance / (Math.sqrt(varianceX) * Math.sqrt(varianceY));
 	}
 
 	public static double cosineCorrelation(User x, User y) {
 		List<Review> xUserReviews = x.getAllReviews();
 		List<Review> yUserReviews = y.getAllReviews();
 
-		double similNumerator = 0;
-		double similDenomX = 0;
-		double similDenomY = 0;
+		double dotProd = 0;
+		double normX = 0;
+		double normY = 0;
 
 		// Sum of the squared ratings of all reviews of user x
 		for (Review revX : xUserReviews) {
-			similDenomX += Math.pow(revX.getStars(), 2);
+			normX += Math.pow(revX.getStars(), 2);
 		}
 
 		// Sum of the squared ratings of all reviews of user y
 		for (Review revY : yUserReviews) {
-			similDenomY += Math.pow(revY.getStars(), 2);
+			normY += Math.pow(revY.getStars(), 2);
 		}
 
 		// Find reviews for the same business
 		for (Review revX : xUserReviews) {
 			for (Review revY : yUserReviews) {
-				if (revX.getBusinessId().equals(revY.getBusinessId())) { // can change to utilize commonReviews list
-					similNumerator += revX.getStars() * revY.getStars();
+				if (revX.getBusinessId().equals(revY.getBusinessId())) { 
+					dotProd += revX.getStars() * revY.getStars();
 				}
 			}
 		}
 
 		// Return the Pearson correlation similarity of users x and y
-		return similNumerator / (Math.sqrt(similDenomX) * Math.sqrt(similDenomY));
+		return dotProd / (Math.sqrt(normX) * Math.sqrt(normY));
 	}
 
 	private static double avgRating(User user) {
