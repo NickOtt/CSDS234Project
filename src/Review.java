@@ -3,7 +3,7 @@ public class Review {
 	private String id;
 	private String businessId;
 	private Integer stars;
-	
+
 	public Review(String id, String bId, Integer stars) {
 		this.id = id;
 		this.businessId = bId;

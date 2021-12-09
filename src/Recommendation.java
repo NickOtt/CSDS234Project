@@ -4,7 +4,7 @@ public class Recommendation {
 	private String businessId;
 	private double expectedRatingP;
 	private double expectedRatingC;
-	
+
 	public Recommendation(String busId, double pearsonRating, double cosineRating) {
 		this.businessId = busId;
 		this.expectedRatingP = pearsonRating;

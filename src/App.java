@@ -3,7 +3,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-
+import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.lang.Math;
 
 import org.bson.Document;
@@ -16,7 +18,11 @@ import com.mongodb.client.model.Projections;
 
 public class App {
 	public static void main(String[] args) {
-		// Test stuff
+
+		// Initialize general use variables
+		Logger logger = Logger.getLogger("org.mongodb.driver");
+		logger.setLevel(Level.SEVERE);
+
 		MongoClient mongoClient = new MongoClient("localhost", 27017);
 
 		MongoDatabase database = mongoClient.getDatabase("data");
@@ -24,7 +30,14 @@ public class App {
 		MongoCollection<Document> userTable = database.getCollection("user");
 		MongoCollection<Document> reviewTable = database.getCollection("review");
 
-		String queriedUserId ="gSNq08XIdh_vvdm7USKunA"; //"yWd8xZQY5F6QXhVNQ5TxtA";//"jHEl6lbZ_ToShziNmO-16w"; //"gSNq08XIdh_vvdm7USKunA"; // Should be set with parameter passed in
+		// User inputs user_id
+		Scanner scanUserId = new Scanner(System.in);
+		System.out.println("Enter User ID:");
+
+		String queriedUserId = scanUserId.nextLine().trim(); // "yWd8xZQY5F6QXhVNQ5TxtA";//"jHEl6lbZ_ToShziNmO-16w";
+																// //"gSNq08XIdh_vvdm7USKunA";
+
+		scanUserId.close();
 
 		// Put together queried user object
 		List<Document> qUserInfo = userTable.find(Filters.eq("user_id", queriedUserId))
@@ -49,13 +62,13 @@ public class App {
 
 		User queriedUser = new User(qUserInfo.get(0).getString("user_id"), qUserAvgStars, qUserReviews);
 
+		// Build related users list based on shared reviewed businesses
 		ArrayList<User> relatedUserList = new ArrayList<User>();
 		List<Document> queriedUserReviewList = reviewTable.find(Filters.eq("user_id", queriedUserId))
 				.projection(Projections.fields(Projections.include("review_id", "user_id", "business_id", "stars")))
 				.into(new ArrayList<Document>());
 		for (int rev = 0; rev < queriedUserReviewList.size(); rev++) {
-			// This should be used as the list of users to compare to. Need to get the
-			// average stars for these though
+			// This should be used as the list of users to compare to
 			List<Document> relatedUserId = reviewTable
 					.find(Filters.eq("business_id", queriedUserReviewList.get(rev).get("business_id")))
 					.projection(Projections.fields(Projections.include("user_id"))).into(new ArrayList<Document>());
@@ -75,7 +88,8 @@ public class App {
 							new User(relatedUserId.get(relatedUser).get("user_id").toString(), userAvgStars, null));
 				}
 			}
-			System.out.println("Done with review " + rev);
+			// System.out.println("Done with review " + rev); //Print used to show progress
+			// of queries
 		}
 
 		ArrayList<User> userList = new ArrayList<User>();
@@ -98,60 +112,58 @@ public class App {
 			}
 
 			relatedUserList.get(user).setAllReviews(userReviews);
-			if(!relatedUserList.get(user).getId().equals(queriedUser.getId())) {
+			if (!relatedUserList.get(user).getId().equals(queriedUser.getId())) {
 				userList.add(relatedUserList.get(user));
 			}
-			System.out.println("Updated user " + user);
+			// System.out.println("Updated user " + user); //Print used to show progress of
+			// queries
 		}
-		
-		
-		//Recommendations
+
+		// Get recommendations
 		ArrayList<Recommendation> recommendationList = new ArrayList<Recommendation>();
 
 		for (User x : userList) {
 			x.setCommonAndPossReviews(queriedUser.getAllReviews());
-			
+
 			for (Review rev : x.possibleRecs) {
 				double expRatP = expRatP(queriedUser, userList, rev);
 				double expRatC = expRatC(queriedUser, userList, rev);
-//				System.out.println("Recommending " + rev.getBusinessId() + " with Pearson: " + expRatP
-//						+ " and Cosine: " + expRatC);
 				recommendationList.add(new Recommendation(rev.getBusinessId(), expRatP, expRatC));
 			}
 		}
-		
-		//Sort by Pearson Rating
+
+		// Sort by Pearson Rating
 		Collections.sort(recommendationList, new Comparator<Recommendation>() {
-		    @Override
-		    public int compare(Recommendation rec1, Recommendation rec2) {
-		        if (rec1.getExpectedRatingP() < rec2.getExpectedRatingP())
-		            return 1;
-		        if (rec1.getExpectedRatingP() > rec2.getExpectedRatingP())
-		            return -1;
-		        return 0;
-		    }
+			@Override
+			public int compare(Recommendation rec1, Recommendation rec2) {
+				if (rec1.getExpectedRatingP() < rec2.getExpectedRatingP())
+					return 1;
+				if (rec1.getExpectedRatingP() > rec2.getExpectedRatingP())
+					return -1;
+				return 0;
+			}
 		});
-		
+
 		for (int recNum = 0; recNum < 10; recNum++) {
-			System.out.println("Recommending " + recommendationList.get(recNum).getBusinessId()
-					+ " with Pearson: " + recommendationList.get(recNum).getExpectedRatingP());
+			System.out.println("Recommending " + recommendationList.get(recNum).getBusinessId() + " with Pearson: "
+					+ recommendationList.get(recNum).getExpectedRatingP());
 		}
-		
-		//Sort by Cosine Rating
+
+		// Sort by Cosine Rating
 		Collections.sort(recommendationList, new Comparator<Recommendation>() {
-		    @Override
-		    public int compare(Recommendation rec1, Recommendation rec2) {
-		        if (rec1.getExpectedRatingC() < rec2.getExpectedRatingC())
-		            return 1;
-		        if (rec1.getExpectedRatingC() > rec2.getExpectedRatingC())
-		            return -1;
-		        return 0;
-		    }
+			@Override
+			public int compare(Recommendation rec1, Recommendation rec2) {
+				if (rec1.getExpectedRatingC() < rec2.getExpectedRatingC())
+					return 1;
+				if (rec1.getExpectedRatingC() > rec2.getExpectedRatingC())
+					return -1;
+				return 0;
+			}
 		});
-		
+
 		for (int recNum = 0; recNum < 10; recNum++) {
-			System.out.println("Recommending " + recommendationList.get(recNum).getBusinessId()
-					+ " with Cosine: " + recommendationList.get(recNum).getExpectedRatingC());
+			System.out.println("Recommending " + recommendationList.get(recNum).getBusinessId() + " with Cosine: "
+					+ recommendationList.get(recNum).getExpectedRatingC());
 		}
 
 		// To close connection
@@ -164,7 +176,7 @@ public class App {
 
 		// Calculate average ratings for users x and y across all ratings
 		double avgRatingUserX = avgRating(x);
-		double avgRatingUserY = avgRating(y); 
+		double avgRatingUserY = avgRating(y);
 
 		double similNumerator = 0;
 		double similDenomX = 0;
@@ -181,10 +193,10 @@ public class App {
 				}
 			}
 		}
-		
-		if(similDenomX == 0 || similDenomY == 0) {
-    		return 0;
-    	}
+
+		if (similDenomX == 0 || similDenomY == 0) {
+			return 0;
+		}
 
 		// Return the Pearson correlation similarity of users x and y
 		return similNumerator / (Math.sqrt(similDenomX) * Math.sqrt(similDenomY));
@@ -220,18 +232,18 @@ public class App {
 		// Return the Pearson correlation similarity of users x and y
 		return similNumerator / (Math.sqrt(similDenomX) * Math.sqrt(similDenomY));
 	}
-	
-    private static double avgRating(User user) {
-    	List<Review> userReviews = user.getAllReviews();
-    	double avgRating = 0;
-    	int numRatings = userReviews.size();
 
-    	for(Review rev : userReviews) {
-    		avgRating += rev.getStars();
-    	}
-    	
-    	return avgRating/numRatings;
-    }
+	private static double avgRating(User user) {
+		List<Review> userReviews = user.getAllReviews();
+		double avgRating = 0;
+		int numRatings = userReviews.size();
+
+		for (Review rev : userReviews) {
+			avgRating += rev.getStars();
+		}
+
+		return avgRating / numRatings;
+	}
 
 	private static double cosineK(User x, List<User> userList) {
 		double k;
