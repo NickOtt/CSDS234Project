@@ -51,4 +51,21 @@ public class User
 	public void setAvgStars(double avgStars) {
 		this.avgStars = avgStars;
 	}
+	
+	public void setCommonAndPossReviews(ArrayList<Review> rev) {
+		for (Review curUserRev : this.reviews) {
+			boolean inCompareUserRevs = false;
+			for (Review compareRev : rev) {
+				if(curUserRev.getBusinessId().equals(compareRev.getBusinessId())) {
+					inCompareUserRevs = true;
+					this.commonReviews.add(curUserRev);
+					break;
+				}
+			}
+			
+			if(!inCompareUserRevs) {
+				this.possibleRecs.add(curUserRev);
+			}
+		}
+	}
 }

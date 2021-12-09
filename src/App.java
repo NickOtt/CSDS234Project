@@ -1,5 +1,7 @@
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import java.lang.Math;
@@ -99,30 +101,55 @@ public class App {
 			userList.add(relatedUserList.get(user));
 			System.out.println("Updated user " + user);
 		}
+		
+		
+		//Recommendations
+		ArrayList<Recommendation> recommendationList = new ArrayList<Recommendation>();
 
 		for (User x : userList) {
-			if (!(x.getId().equals(queriedUser.getId()))) {
-				// Sort into common reviews and possible businesses for recommendation (review
-				// in y but not in x)
-				for (Review r1 : x.getAllReviews()) {
-					String biz1 = r1.getBusinessId();
-					for (Review r2 : queriedUser.getAllReviews()) {
-						String biz2 = r2.getBusinessId();
-						if (biz1.equals(biz2)) {
-							x.commonReviews.add(r1);
-						} else {
-
-							x.possibleRecs.add(r1);
-						}
-					}
-				}
-				for (Review rev : x.possibleRecs) {
-					double expRatP = expRatP(x, userList, rev);
-					double expRatC = expRatC(x, userList, rev);
-					System.out.println("Recommending " + rev.getBusinessId() + " with Pearson: " + expRatP
-							+ " and Cosine: " + expRatC);
-				}
+			x.setCommonAndPossReviews(queriedUser.getAllReviews());
+			
+			for (Review rev : x.possibleRecs) {
+				double expRatP = expRatP(queriedUser, userList, rev);
+				double expRatC = expRatC(queriedUser, userList, rev);
+//				System.out.println("Recommending " + rev.getBusinessId() + " with Pearson: " + expRatP
+//						+ " and Cosine: " + expRatC);
+				recommendationList.add(new Recommendation(rev.getBusinessId(), expRatP, expRatC));
 			}
+		}
+		
+		//Sort by Pearson Rating
+		Collections.sort(recommendationList, new Comparator<Recommendation>() {
+		    @Override
+		    public int compare(Recommendation rec1, Recommendation rec2) {
+		        if (rec1.getExpectedRatingP() < rec2.getExpectedRatingP())
+		            return 1;
+		        if (rec1.getExpectedRatingP() > rec2.getExpectedRatingP())
+		            return -1;
+		        return 0;
+		    }
+		});
+		
+		for (int recNum = 0; recNum < 10; recNum++) {
+			System.out.println("Recommending " + recommendationList.get(recNum).getBusinessId()
+					+ " with Pearson: " + recommendationList.get(recNum).getExpectedRatingP());
+		}
+		
+		//Sort by Cosine Rating
+		Collections.sort(recommendationList, new Comparator<Recommendation>() {
+		    @Override
+		    public int compare(Recommendation rec1, Recommendation rec2) {
+		        if (rec1.getExpectedRatingC() < rec2.getExpectedRatingC())
+		            return 1;
+		        if (rec1.getExpectedRatingC() > rec2.getExpectedRatingC())
+		            return -1;
+		        return 0;
+		    }
+		});
+		
+		for (int recNum = 0; recNum < 10; recNum++) {
+			System.out.println("Recommending " + recommendationList.get(recNum).getBusinessId()
+					+ " with Cosine: " + recommendationList.get(recNum).getExpectedRatingC());
 		}
 
 		// To close connection
@@ -134,8 +161,8 @@ public class App {
 		List<Review> yUserReviews = y.getAllReviews();
 
 		// Calculate average ratings for users x and y across all ratings
-		double avgRatingUserX = avgRating(x);
-		double avgRatingUserY = avgRating(y);
+		double avgRatingUserX = x.getAvgStars();
+		double avgRatingUserY = y.getAvgStars();
 
 		double similNumerator = 0;
 		double similDenomX = 0;
@@ -190,18 +217,6 @@ public class App {
 
 		// Return the Pearson correlation similarity of users x and y
 		return similNumerator / (Math.sqrt(similDenomX) * Math.sqrt(similDenomY));
-	}
-
-	private static double avgRating(User user) {
-		List<Review> userReviews = user.getAllReviews();
-		double avgRating = 0;
-		int numRatings = userReviews.size();
-
-		for (Review rev : userReviews) {
-			avgRating += rev.getStars();
-		}
-
-		return avgRating / numRatings;
 	}
 
 	private static double cosineK(User x, List<User> userList) {
