@@ -38,7 +38,11 @@ public class App {
 																// //"gSNq08XIdh_vvdm7USKunA";
 
 		scanUserId.close();
+		
+		long start = System.currentTimeMillis();
 
+		long startBuildQueriedUser = System.currentTimeMillis();
+		
 		// Put together queried user object
 		List<Document> qUserInfo = userTable.find(Filters.eq("user_id", queriedUserId))
 				.projection(Projections.fields(Projections.include("user_id", "average_stars")))
@@ -68,7 +72,12 @@ public class App {
 		}
 
 		User queriedUser = new User(qUserInfo.get(0).getString("user_id"), qUserAvgStars, qUserReviews);
+		
+		long finishBuildQueriedUser = System.currentTimeMillis();
+		System.out.println("Build User time: " + (finishBuildQueriedUser - startBuildQueriedUser)/1000);
 
+		long startRelatedUserList = System.currentTimeMillis();
+		
 		// Build related users list based on shared reviewed businesses
 		ArrayList<User> relatedUserList = new ArrayList<User>();
 		List<Document> queriedUserReviewList = reviewTable.find(Filters.eq("user_id", queriedUserId))
@@ -98,8 +107,13 @@ public class App {
 			// System.out.println("Done with review " + rev); //Print used to show progress
 			// of queries
 		}
+		
+		long finishRelatedUserList = System.currentTimeMillis();
+		System.out.println("Build Related User time: " + (finishRelatedUserList - startRelatedUserList)/1000);
 
 		ArrayList<User> userList = new ArrayList<User>();
+		
+		long startRelatedUserReviews = System.currentTimeMillis();
 
 		// Create related User instantiations
 		for (int user = 0; user < 20; user++) {
@@ -125,6 +139,10 @@ public class App {
 			// System.out.println("Updated user " + user); //Print used to show progress of
 			// queries
 		}
+		
+
+		long finishRelatedUserReviews = System.currentTimeMillis();
+		System.out.println("Build Related User reviews time: " + (finishRelatedUserReviews - startRelatedUserReviews)/1000);
 
 		// Get recommendations
 		ArrayList<Recommendation> recommendationList = new ArrayList<Recommendation>();
@@ -172,6 +190,10 @@ public class App {
 			System.out.println("Recommending " + recommendationList.get(recNum).getBusinessId() + " with Cosine: "
 					+ recommendationList.get(recNum).getExpectedRatingC());
 		}
+		
+		long finish = System.currentTimeMillis();
+		
+		System.out.println("Total time: " + (finish-start)/1000);
 
 		// To close connection
 		mongoClient.close();
